@@ -1,78 +1,81 @@
-import * as LogManager from 'aurelia-logging';
-import {
-  customAttribute,
-  bindable,
-  ViewSlot,
-  ViewLocator,
-  customElement,
-  noView,
-  BehaviorInstruction,
-  CompositionTransaction,
-  CompositionEngine,
-  ShadowDOM,
-  SwapStrategies,
-  useView,
-  inlineView
-} from 'aurelia-templating';
-import {
-  Router,
-  RouteLoader
-} from 'aurelia-router';
-import {
-  DOM
-} from 'aurelia-pal';
-import {
-  Container,
-  inject
-} from 'aurelia-dependency-injection';
-import {
-  createOverrideContext
-} from 'aurelia-binding';
-import {
-  Origin
-} from 'aurelia-metadata';
-import {
-  relativeToFile
-} from 'aurelia-path';
-export declare class RouteHref {
-  static inject(): any;
-  constructor(router?: any, element?: any);
-  bind(): any;
-  unbind(): any;
-  attributeChanged(value?: any, previous?: any): any;
-  processChange(): any;
-}
-export declare class RouterView {
-  static inject(): any;
-  swapOrder: any;
-  layoutView: any;
-  layoutViewModel: any;
-  layoutModel: any;
-  element: any;
-  constructor(element?: any, container?: any, viewSlot?: any, router?: any, viewLocator?: any, compositionTransaction?: any, compositionEngine?: any);
-  created(owningView?: any): any;
-  bind(bindingContext?: any, overrideContext?: any): any;
-  process(viewPortInstruction?: any, waitToSwap?: any): any;
-  swap(viewPortInstruction?: any): any;
-}
+import { OverrideContext } from 'aurelia-binding';
+import { Container } from 'aurelia-dependency-injection';
+import { NavigationInstruction, RouteConfig, RouteLoader, Router, ViewPort, ViewPortComponent, ViewPortInstruction } from 'aurelia-router';
+import { CompositionEngine, CompositionTransaction, View, ViewLocator, ViewSlot } from 'aurelia-templating';
 
-/**
-* Locator which finds the nearest RouterView, relative to the current dependency injection container.
-*/
-export declare class RouterViewLocator {
-  
-  /**
-    * Creates an instance of the RouterViewLocator class.
-    */
-  constructor();
-  
-  /**
-    * Finds the nearest RouterView instance.
-    * @returns A promise that will be resolved with the located RouterView instance.
-    */
-  findNearest(): Promise<RouterView>;
-}
 export declare class TemplatingRouteLoader extends RouteLoader {
-  constructor(compositionEngine?: any);
-  loadRoute(router?: any, config?: any): any;
+	compositionEngine: CompositionEngine;
+	constructor(compositionEngine: CompositionEngine);
+	loadRoute(router: Router, config: RouteConfig, _navInstruction: NavigationInstruction): Promise<ViewPortComponent>;
 }
+/**
+ * Implementation of Aurelia Router ViewPort. Responsible for loading route, composing and swapping routes views
+ */
+export declare class RouterView implements ViewPort {
+	/**
+	 * Swapping order when going to a new route. By default, supports 3 value: before, after, with
+	 * - Before = new in -> old out
+	 * - After = old out -> new in
+	 * - with = new in + old out
+	 *
+	 * These values are defined by swapStrategies export in aurelia-templating/ aurelia-framework
+	 */
+	swapOrder: string;
+	layoutView: any;
+	layoutViewModel: string | Function | object;
+	layoutModel: any;
+	/**
+	 * Element associated with this <router-view/> custom element
+	 */
+	readonly element: Element;
+	/**
+	 * Current router associated with this <router-view/>
+	 */
+	readonly router: Router;
+	/**
+	 * Container at this <router-view/> level
+	 */
+	container: Container;
+	constructor(element: Element, container: Container, viewSlot: ViewSlot, router: Router, viewLocator: ViewLocator, compositionTransaction: CompositionTransaction, compositionEngine: CompositionEngine);
+	created(owningView: View): void;
+	bind(bindingContext: any, overrideContext: OverrideContext): void;
+	process(viewPortInstruction: ViewPortInstruction, waitToSwap?: boolean): Promise<any>;
+	swap(viewPortInstruction: ViewPortInstruction): void | Promise<void>;
+}
+/**
+ * Helper custom attribute to help associate an element with a route by name
+ */
+export declare class RouteHref {
+	/**
+	 * Current router of this attribute
+	 */
+	readonly router: Router;
+	/**
+	 * Element this attribute is associated with
+	 */
+	readonly element: Element;
+	/**
+	 * Name of the route this attribute refers to. This name should exist in the current router hierarchy
+	 */
+	route: string;
+	/**
+	 * Parameters of this attribute to generate URL.
+	 */
+	params: Record<string, any>;
+	/**
+	 * Target property on a custom element if this attribute is put on a custom element
+	 * OR an attribute if this attribute is put on a normal element
+	 */
+	attribute: string;
+	constructor(router: Router, element: Element);
+	bind(): void;
+	unbind(): void;
+	attributeChanged(value: any, previous: any): void;
+	processChange(): Promise<any>;
+}
+export interface IFrameworkConfiguration {
+	container: Container;
+	singleton(...args: any[]): this;
+	globalResources(...args: any[]): this;
+}
+export declare function configure(config: IFrameworkConfiguration): void;
